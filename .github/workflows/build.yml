@@ -58,9 +58,9 @@ jobs:
           cmake -E tar cjvf ${ARTIFACT_NAME} arm-webos-linux-gnueabi_sdk-buildroot
         working-directory: ${{steps.build-toolchain.outputs.dist}}
 
-name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Build for ${{ matrix.name }}
-          path: |
-            arm-webos-linux-gnueabi_sdk-buildroot_${{matrix.os}}-${{matrix.arch}}.tar.bz2
+name: Upload IPK
+      uses: actions/upload-artifact@v4
+      with:
+        name: files
+        path: '*.tar.bz2'
+        if-no-files-found: error
