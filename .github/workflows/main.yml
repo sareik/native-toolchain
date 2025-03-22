@@ -1,0 +1,59 @@
+name: Build
+run-name: Build (${{ github.event.inputs.machine-name }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      machine-name:
+        description: 'Host to build for'
+        required: true
+        type: choice
+        options:
+          - 'macOS x86_64'
+          - 'macOS ARM64'
+          - 'Linux ARM64'
+
+jobs:
+  machine-select:
+    name: Select build machine
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.result }}
+    steps:
+      - name: Set Output
+        id: set-matrix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const machines = [
+                {machine: 'macos-12', os: 'darwin', arch: 'x86_64', name: 'macOS x86_64'},
+                {machine: 'macos-14', os: 'darwin', arch: 'arm64', name: 'macOS ARM64'},
+                {machine: 'ubuntu-22.04-arm', os: 'linux', arch: 'aarch64', name: 'Linux ARM64'}
+            ];
+            return machines.filter(machine => machine.name === '${{ github.event.inputs.machine-name }}');
+
+  build:
+    name: Build for ${{ matrix.name }}
+    needs: machine-select
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.machine-select.outputs.matrix) }}
+    runs-on: ${{ matrix.machine }}
+    env:
+      ARTIFACT_NAME: arm-webos-linux-gnueabi_sdk-buildroot_${{matrix.os}}-${{matrix.arch}}.tar.bz2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build toolchain
+        id: build-toolchain
+        uses: './.github/actions/build-toolchain'
+        with:
+          machine: ${{ matrix.machine }}
+          os: ${{ matrix.os }}
+          arch: ${{ matrix.arch }}
+
+      - name: Make tarball
+        run: |
+          cmake -E tar cjvf ${ARTIFACT_NAME} arm-webos-linux-gnueabi_sdk-buildroot
+        working-directory: ${{steps.build-toolchain.outputs.dist}}
