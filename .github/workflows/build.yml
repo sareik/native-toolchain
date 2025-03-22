@@ -58,9 +58,6 @@ jobs:
           cmake -E tar cjvf ${ARTIFACT_NAME} arm-webos-linux-gnueabi_sdk-buildroot
         working-directory: ${{steps.build-toolchain.outputs.dist}}
 
-        name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: test
-          path: |
-            ${{github.workspace}}/test.tar.gz
+         - name: Upload a Build Artifact
+  uses: actions/upload-artifact@v4.6.2
+        
